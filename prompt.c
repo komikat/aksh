@@ -1,6 +1,7 @@
 #include "headers.h"
+#include <unistd.h>
 
-void prompt() {
+void prompt(char *username, char *hostname, char *pathname) {
     // Do not hardcode the prmopt
-    printf("<Everything is a file> ");    
+    printf("<%s@%s:%s>", username, hostname, pathname);
 }
