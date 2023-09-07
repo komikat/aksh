@@ -6,9 +6,18 @@
 #include <sys/syslimits.h>
 #include <unistd.h>
 
+#include <termios.h>
+
 #define USER_LENGTH 257 // max size of username in linux + 1 for NULL character
 
 char file_path[PATH_MAX]; // beginning path
+
+struct termios orig_term;
+
+// raw mode
+void enable_rawmode() {}
+
+void disable_raw() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_term); }
 
 char *getrpath(char *file_path) {
     // get relative path
@@ -41,7 +50,30 @@ void stripspace(char *str) {
     return;
 }
 
+int prefixcheck(const char *str, const char *prefix) {
+    // empty string prefix of every string
+    if (strlen(prefix) == 0)
+        return 1;
+
+    if (strncmp(str, prefix, strlen(prefix)) == 0)
+        return 1;
+
+    return 0;
+}
+
 int main() {
+    char *completions[3];
+    completions[0] = "test";
+    completions[1] = "warp";
+    completions[2] = "echo";
+
+    tcgetattr(STDIN_FILENO, &orig_term);
+
+    // turn off canonical mode
+    orig_term.c_lflag &= ~(ICANON | ECHO | ECHOE);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_term);
+    char backspace = orig_term.c_cc[VERASE];
+
     char username[USER_LENGTH];
     char hostname[USER_LENGTH];
     char pathname[PATH_MAX];
@@ -52,25 +84,75 @@ int main() {
 
     char *rel_pathname = getrpath(file_path);
 
+    char input[4096];
+    input[0] = 0;
+    char last[4096];
     // Keep accepting commands
     while (1) {
         char *save_ptr;
+        int tabbed = 0;
 
         // Print appropriate prompt with username, systemname and directory
         // before accepting input
         prompt(username, hostname, rel_pathname);
-        char input[4096];
-        fgets(input, 4096, stdin);
-        stripspace(input);
 
-        char *cmd = strtok_r(input, " \n", &save_ptr);
+        // fgets(input, 4096, stdin);
+        int i = 0;
 
-        if (cmd != NULL && (strcmp(cmd, "warp") == 0)) {
-            char const *dest = strtok_r(NULL, " \n", &save_ptr);
-            warp(dest, file_path, save_ptr);
-            rel_pathname = getrpath(file_path);
+        char c;
+        while ((c = getchar()) != EOF && c != '\n') {
+            // fputs(input, stdout);
+            if (c == backspace && i > 0) {
+                fputs("\b \b", stdout);
+
+                input[--i] = 0x00;
+            }
+
+            else if (c == '\t') {
+                tabbed = 1;
+
+                int found = 0;
+                // fputs(input, stdin);
+
+                for (int i = 0; i < 3; i++) {
+                    if (prefixcheck(completions[i], input) == 1) {
+                        found = 1;
+                        fputc('\n', stdout);
+                        fputs(completions[i], stdout);
+                    }
+                }
+
+                if (found == 1) {
+                    break;
+                }
+
+            } else if (c != backspace && c != '\t') {
+                input[i++] = c;
+                input[i] = 0;
+                fputc(c, stdout);
+            }
         }
+        fputc('\n', stdout);
+        if (tabbed == 0) {
 
-        // warp command
+            input[i] = 0;
+            strcpy(last, input);
+
+            stripspace(input);
+
+            // check if ";"
+
+            char *cmd = strtok_r(input, " \n", &save_ptr);
+
+            if (cmd != NULL && (strcmp(cmd, "warp") == 0)) {
+                char const *dest = strtok_r(NULL, " \n", &save_ptr);
+                warp(dest, file_path, save_ptr);
+                rel_pathname = getrpath(file_path);
+            }
+
+            // warp command
+        }
+        strcpy(input, "");
     }
+    disable_raw();
 }

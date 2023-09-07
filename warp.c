@@ -11,6 +11,11 @@ void warp(const char *dest, char *file_path, char *save_ptr) {
 
     // >home directory
     // >> if ~
+
+    char *destupdate = (char *)calloc(PATH_MAX, sizeof(char));
+    char *working_dir = (char *)calloc(PATH_MAX, sizeof(char));
+    getcwd(working_dir, PATH_MAX);
+
     if (dest == NULL) {
         chdir(file_path);
         return;
@@ -26,42 +31,41 @@ void warp(const char *dest, char *file_path, char *save_ptr) {
 
     // if dot dot
     else if (dest != NULL && strcmp(dest, "..") == 0) {
-        char *working_dir = (char *)calloc(PATH_MAX, sizeof(char));
-        getcwd(working_dir, PATH_MAX);
-        int len = strlen(working_dir);
-        char *temppath = (char *)calloc(len, sizeof(char));
-        strcpy(temppath, working_dir);
 
-        char *slash = strrchr(temppath, '/');
+        int len = strlen(working_dir);
+        strcpy(destupdate, working_dir);
+
+        char *slash = strrchr(destupdate, '/');
         if (slash != NULL) {
             *slash = 0;
         }
 
-        chdir(temppath);
+        chdir(destupdate);
     }
 
     else if (dest[0] == '~') {
-        char *destupdate = (char *)calloc(PATH_MAX, sizeof(char));
+
         strcpy(destupdate, file_path);
         strcat(destupdate, &dest[1]);
         chdir(destupdate);
-        free(destupdate);
+
     } else {
-        char *destupdate = (char *)calloc(PATH_MAX, sizeof(char));
-        char *working_dir = (char *)calloc(PATH_MAX, sizeof(char));
+
         getcwd(working_dir, PATH_MAX);
         strcpy(destupdate, working_dir);
         strcat(destupdate, "/");
         strcat(destupdate, dest);
 
         chdir(destupdate);
-        free(destupdate);
     }
 
     char const *intdest = strtok_r(NULL, " \n", &save_ptr);
     if (intdest != NULL) {
         warp(intdest, file_path, save_ptr);
     }
+
+    free(working_dir);
+    free(destupdate);
 
     // strcat(destupdate);
 }
