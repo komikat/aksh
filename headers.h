@@ -12,4 +12,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <_ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/syslimits.h>
+#include <unistd.h>
+
+#include "helpers.h"
+#include "run.h"
+#include <termios.h>
+
 #endif
