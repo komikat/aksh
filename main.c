@@ -1,6 +1,8 @@
 #include "headers.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define USER_LENGTH 257 // max size of username in linux + 1 for NULL character
@@ -13,6 +15,7 @@ struct termios orig_term;
 void disable_raw() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_term); }
 
 int main() {
+    char *pastevents[15] = {NULL};
     char *completions[3];
     completions[0] = "test";
     completions[1] = "warp";
@@ -35,11 +38,14 @@ int main() {
 
     char input[4096];
     input[0] = 0;
-    char last[4096];
+    char last[4096] = "None";
     // Keep accepting commands
     pid_t pid = getpid();
     pid_t last_checked_pid = pid; // getting pid after last process
+
+    int index_cmd = 0; // index of the command
     while (pid == last_checked_pid) {
+        fputc('\n', stdout);
         char *save_ptr;
         int tabbed = 0;
         char *rel_pathname = getrpath(home_dir);
@@ -65,11 +71,12 @@ int main() {
                 int found = 0;
                 // fputs(input, stdin);
 
-                for (int i = 0; i < 3; i++) {
-                    if (prefixcheck(completions[i], input) == 1) {
+                for (int i = 0; i < 15; i++) {
+                    if (pastevents[i] != NULL &&
+                        prefixcheck(pastevents[i], input) == 1) {
                         found = 1;
                         fputc('\n', stdout);
-                        fputs(completions[i], stdout);
+                        fputs(pastevents[i], stdout);
                     }
                 }
 
@@ -87,7 +94,6 @@ int main() {
         if (tabbed == 0) {
 
             input[i] = 0;
-            strcpy(last, input);
 
             stripspace(input);
 
@@ -98,15 +104,24 @@ int main() {
 
             // run for every segment
             while (expr != NULL) {
-                run_wrapper(expr, save_ptr, home_dir);
+                run_wrapper(expr, save_ptr, home_dir, pastevents);
                 expr = strtok_r(NULL, ";", &semicolon_ptr);
             }
         }
+
+        if (strlen(last) != 0 && strcmp(last, input) != 0) {
+            char *temp_inp = (char *)calloc(strlen(input) + 1, sizeof(char));
+            strcpy(temp_inp, input);
+            if (pastevents[index_cmd % 15] != NULL) {
+                free(pastevents[index_cmd % 15]);
+            }
+            pastevents[(index_cmd++) % 15] = temp_inp;
+        }
+        strcpy(last, input);
         // reset input
         strcpy(input, "");
 
         // next prompt
-        fputc('\n', stdout);
         last_checked_pid = getpid(); // getting pid after last process
     }
 }
