@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-#include "init.h"
 #include "prompt.h"
 #include "warp.h"
 #include <ctype.h>

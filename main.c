@@ -13,25 +13,33 @@ char home_dir[PATH_MAX];     // beginning path
 int child_pids[1000] = {-1}; // pids of child processes
 int child_current_idx = 0;   // index of the current child id
 
-struct termios orig_term;
+void die(const char *s) {
+    perror(s);
+    exit(1);
+}
 
-// raw mode
-void disable_raw() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_term); }
+struct termios orig_termios;
 
-void add_child(int id) { child_pids[child_current_idx++] = id; }
+void disableRawMode() {
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+        die("tcsetattr");
+}
+
+void enableRawMode() {
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+        die("tcgetattr");
+    atexit(disableRawMode);
+    struct termios raw = orig_termios;
+    raw.c_lflag &= ~(ICANON | ECHO);
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
+        die("tcsetattr");
+}
 
 // forground
 int foreground = 0; // if process running on the foreground
 
 int main() {
     past pastevents = init_past();
-
-    tcgetattr(STDIN_FILENO, &orig_term);
-
-    // turn off canonical mode
-    orig_term.c_lflag &= ~(ICANON | ECHO | ECHOE);
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_term);
-    char backspace = orig_term.c_cc[VERASE];
 
     char username[USER_LENGTH];
     char hostname[USER_LENGTH];
@@ -41,9 +49,10 @@ int main() {
     getcwd(home_dir, PATH_MAX);
 
     // input stuff
-    char input[4096];
-    input[0] = 0;
-    char last[4096] = "None";
+    char *input = malloc(sizeof(char) * 100);
+    char c;
+
+    char last[100] = "None";
 
     // child processes list
     child main_process = create_node(getpid());
@@ -53,6 +62,8 @@ int main() {
     // Keep accepting commands
     // only run if no command in foreground
     while (1) {
+        setbuf(stdout, NULL);
+        enableRawMode();
         if (getpid() == main_process->pid) {
             if (foreground == 0) {
                 // when no foreground process
@@ -62,35 +73,50 @@ int main() {
                 // Print appropriate prompt with username, systemname and
                 // directory before accepting input
                 prompt(username, hostname, rel_pathname);
+                memset(input, '\0', 100);
 
                 int i = 0;
+                int pt = 0;
 
-                char c;
-                while ((c = getchar()) != EOF && c != '\n') {
-                    // fputs(input, stdout);
-                    if (c == backspace && i > 0) {
-                        fputs("\b \b", stdout);
-
-                        input[--i] = 0x00;
-                    }
-
-                    else if (c == '\t') {
-                        tabbed = 1;
-
-                        int found = filter_events(pastevents, input);
-
-                        if (found == 1) {
+                while (read(STDIN_FILENO, &c, 1) == 1) {
+                    if (iscntrl(c)) {
+                        if (c == 10)
                             break;
+                        else if (c == 27) {
+                            char buf[3];
+                            buf[2] = 0;
+                            if (read(STDIN_FILENO, buf, 2) ==
+                                2) { // length of escape code
+                                printf("\rarrow key: %s", buf);
+                            }
+                        } else if (c == 127) { // backspace
+                            if (pt > 0) {
+                                if (input[pt - 1] == 9) {
+                                    for (int i = 0; i < 7; i++) {
+                                        printf("\b");
+                                    }
+                                }
+                                input[--pt] = '\0';
+                                printf("\b \b");
+                            }
+                        } else if (c == 9) { // TAB character
+                            input[pt++] = c;
+                            tabbed = 1;
+
+                        } else if (c == 4) {
+                            exit(0);
+                        } else {
+                            printf("%d\n", c);
                         }
-                    } else if (c != backspace && c != '\t') {
-                        input[i++] = c;
-                        input[i] = 0;
-                        fputc(c, stdout);
+                    } else {
+                        input[pt++] = c;
+                        printf("%c", c);
                     }
                 }
+                disableRawMode();
 
                 if (tabbed == 0) {
-
+                    printf(input);
                     input[i] = 0;
                     add_event_past(pastevents, input);
 
