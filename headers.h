@@ -19,6 +19,8 @@
 #include <unistd.h>
 
 #include "helpers.h"
+#include "list.h"
+#include "pastevents.h"
 #include "run.h"
 #include <termios.h>
 

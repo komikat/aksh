@@ -59,6 +59,10 @@ void warp(const char *dest, char *file_path, char *save_ptr) {
         chdir(destupdate);
     }
 
+    getcwd(working_dir, PATH_MAX);
+    fputc('\n', stdout);
+    fputs(working_dir, stdout);
+
     char const *intdest = strtok_r(NULL, " \n", &save_ptr);
     if (intdest != NULL) {
         warp(intdest, file_path, save_ptr);

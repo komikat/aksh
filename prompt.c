@@ -3,19 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MAX_PROMPT 8192
-
 void prompt(char *username, char *hostname, char *pathname) {
-    // Do not hardcode the prmopt
-    char *promptstr = (char *)calloc(MAX_PROMPT, sizeof(char));
-
-    strcpy(promptstr, "<");
-    strcat(promptstr, username);
-    strcat(promptstr, "@");
-    strcat(promptstr, hostname);
-    strcat(promptstr, ":");
-    strcat(promptstr, pathname);
-    strcat(promptstr, "> ");
-
+    // creates the prompt string and prints it
+    char *promptstr;
+    asprintf(&promptstr, "<%s@%s:%s> ", username, hostname, pathname);
     fputs(promptstr, stdout);
 }
