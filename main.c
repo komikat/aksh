@@ -62,87 +62,86 @@ int main() {
     // Keep accepting commands
     // only run if no command in foreground
     while (1) {
-        setbuf(stdout, NULL);
-        enableRawMode();
         if (getpid() == main_process->pid) {
-            if (foreground == 0) {
-                // when no foreground process
-                char *save_ptr;
-                int tabbed = 0;
-                char *rel_pathname = getrpath(home_dir);
-                // Print appropriate prompt with username, systemname and
-                // directory before accepting input
-                prompt(username, hostname, rel_pathname);
-                memset(input, '\0', 100);
+            setbuf(stdout, NULL);
+            enableRawMode();
+            // when no foreground process
+            char *save_ptr;
+            int tabbed = 0;
+            char *rel_pathname = getrpath(home_dir);
+            // Print appropriate prompt with username, systemname and
+            // directory before accepting input
+            //			printf("asd");
+            prompt(username, hostname, rel_pathname);
 
-                int i = 0;
-                int pt = 0;
+            memset(input, '\0', 100);
 
-                while (read(STDIN_FILENO, &c, 1) == 1) {
-                    if (iscntrl(c)) {
-                        if (c == 10)
-                            break;
-                        else if (c == 27) {
-                            char buf[3];
-                            buf[2] = 0;
-                            if (read(STDIN_FILENO, buf, 2) ==
-                                2) { // length of escape code
-                                printf("");
-                            }
-                        } else if (c == 127) { // backspace
-                            if (pt > 0) {
-                                if (input[pt - 1] == 9) {
-                                    for (int i = 0; i < 7; i++) {
-                                        printf("\b");
-                                    }
-                                }
-                                input[--pt] = '\0';
-                                printf("\b \b");
-                            }
-                        } else if (c == 9) { // TAB character
-                            input[pt++] = c;
-                            tabbed = 1;
+            int i = 0;
+            int pt = 0;
 
-                        } else if (c == 4) {
-                            exit(0);
-                        } else {
-                            printf("%d\n", c);
+            while (read(STDIN_FILENO, &c, 1) == 1) {
+                if (iscntrl(c)) {
+                    if (c == 10)
+                        break;
+                    else if (c == 27) {
+                        char buf[3];
+                        buf[2] = 0;
+                        if (read(STDIN_FILENO, buf, 2) ==
+                            2) { // length of escape code
+                            printf("");
                         }
-                    } else {
+                    } else if (c == 127) { // backspace
+                        if (pt > 0) {
+                            if (input[pt - 1] == 9) {
+                                for (int i = 0; i < 7; i++) {
+                                    printf("\b");
+                                }
+                            }
+                            input[--pt] = '\0';
+                            printf("\b \b");
+                        }
+                    } else if (c == 9) { // TAB character
                         input[pt++] = c;
-                        printf("%c", c);
+                        tabbed = 1;
+
+                    } else if (c == 4) {
+                        exit(0);
+                    } else {
+                        printf("%d\n", c);
                     }
+                } else {
+                    input[pt++] = c;
+                    printf("%c", c);
                 }
-                disableRawMode();
-
-                if (tabbed == 0) {
-
-                    add_event_past(pastevents, input);
-                    stripspace(input);
-
-                    // check if ";"
-                    char *semicolon_ptr;
-                    char *expr =
-                        strtok_r(input, ";",
-                                 &semicolon_ptr); // the first expression
-
-                    // run for every segment
-                    while (expr != NULL) {
-                        run(expr, save_ptr, home_dir, pastevents, &foreground,
-                            main_process, username, hostname, rel_pathname);
-                        expr = strtok_r(NULL, ";", &semicolon_ptr);
-                    }
-                }
-
-                strcpy(last, input);
-                // reset input
-                strcpy(input, "");
-
-                // next prompt
-                fputc('\n', stdout);
-                // foreground = 0;
             }
+            disableRawMode();
+
+            if (tabbed == 0) {
+
+                add_event_past(pastevents, input);
+                stripspace(input);
+
+                // check if ";"
+                char *semicolon_ptr;
+                char *expr = strtok_r(input, ";",
+                                      &semicolon_ptr); // the first expression
+
+                // run for every segment
+                while (expr != NULL) {
+                    run(expr, save_ptr, home_dir, pastevents, &foreground,
+                        main_process, username, hostname, rel_pathname);
+                    expr = strtok_r(NULL, ";", &semicolon_ptr);
+                }
+            }
+
+            strcpy(last, input);
+            // reset input
+            strcpy(input, "");
+
+            // next prompt
+            fputc('\n', stdout);
+            // foreground = 0;
         }
-        // in child process
     }
+    // in child process
 }
