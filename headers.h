@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 
+#include "proclore.h"
 #include "prompt.h"
 #include "warp.h"
 #include <ctype.h>

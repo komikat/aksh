@@ -87,7 +87,7 @@ int main() {
                             buf[2] = 0;
                             if (read(STDIN_FILENO, buf, 2) ==
                                 2) { // length of escape code
-                                printf("\rarrow key: %s", buf);
+                                printf("");
                             }
                         } else if (c == 127) { // backspace
                             if (pt > 0) {
@@ -116,10 +116,8 @@ int main() {
                 disableRawMode();
 
                 if (tabbed == 0) {
-                    printf(input);
-                    input[i] = 0;
-                    add_event_past(pastevents, input);
 
+                    add_event_past(pastevents, input);
                     stripspace(input);
 
                     // check if ";"
@@ -131,7 +129,7 @@ int main() {
                     // run for every segment
                     while (expr != NULL) {
                         run(expr, save_ptr, home_dir, pastevents, &foreground,
-                            main_process);
+                            main_process, username, hostname, rel_pathname);
                         expr = strtok_r(NULL, ";", &semicolon_ptr);
                     }
                 }
@@ -144,8 +142,6 @@ int main() {
                 fputc('\n', stdout);
                 // foreground = 0;
             }
-        } else {
-            fputs("im in the child process now\n", stdout);
         }
         // in child process
     }
