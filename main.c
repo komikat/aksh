@@ -32,6 +32,7 @@ void enableRawMode() {
 int foreground = 0; // if process running on the foreground
 
 int main() {
+    printf("Welcome to aksh -- akshit shell\n\n");
     past pastevents = init_past();
 
     char username[USER_LENGTH];
