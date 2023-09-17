@@ -1,12 +1,4 @@
 #include "headers.h"
-#include "libproc.h"
-#include <libproc.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/_types/_pid_t.h>
-#include <sys/proc_info.h>
-#include <unistd.h>
 
 void proclore(pid_t pid) {
 

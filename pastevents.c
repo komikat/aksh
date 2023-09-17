@@ -1,7 +1,4 @@
-#include "pastevents.h"
 #include "headers.h"
-#include <stdio.h>
-#include <string.h>
 
 past init_past() {
     past new_past = (past)calloc(1, sizeof(struct Past));

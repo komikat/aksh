@@ -1,9 +1,4 @@
 #include "headers.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/syslimits.h>
-#include <unistd.h>
 
 void warp(const char *dest, char *file_path, char *save_ptr) {
 

@@ -1,1 +1,0 @@
-void switch_ground();

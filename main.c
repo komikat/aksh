@@ -1,11 +1,4 @@
 #include "headers.h"
-#include "pastevents.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 #define USER_LENGTH 257 // max size of username in linux + 1 for NULL character
 
@@ -55,7 +48,7 @@ int main() {
     char last[100] = "None";
 
     // child processes list
-    child main_process = create_node(getpid());
+    child main_process = create_node(getpid(), "main");
 
     int index_cmd = 0; // index of the command
 

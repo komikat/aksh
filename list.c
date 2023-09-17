@@ -1,22 +1,23 @@
-#include "list.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/_types/_pid_t.h>
+#include "headers.h"
 
-child create_node(pid_t pid) {
+child create_node(pid_t pid, char *cmd) {
     child new = (child)calloc(1, sizeof(struct Elem));
     new->pid = pid;
     new->next = NULL;
+    new->status = 1; // running
+    new->cmd = strdup(cmd);
 
     return new;
 }
 
-void insert_child(child head, pid_t pid) {
-    child new = create_node(pid);
-    if (head == NULL) {
-        head = new;
+void insert_child(child *head, pid_t pid, char *cmd) {
+
+    child new = create_node(pid, cmd);
+    if (*head == NULL) {
+        *head = new;
     } else {
-        child current = head;
+        child current = *head;
+
         while (current->next != NULL) {
             current = current->next;
         }
@@ -25,27 +26,18 @@ void insert_child(child head, pid_t pid) {
     }
 }
 
-pid_t delete_node(child head, pid_t pid) {
+void print_list(child head) {
     child current = head;
-    child prev = NULL;
 
-    while (current->next != NULL && current->pid != pid) {
-        prev = current;
-        current = current->next;
-    }
-    if (current->pid == pid) {
-        if (prev != NULL) {
-            pid_t removed = current->pid;
-            prev->next = current->next->next;
-            free(current);
-            return removed;
+    while (current != NULL) {
+        printf("%d: %s ", current->pid, current->cmd);
+
+        if (current->status == 1) {
+            printf("- Running\n");
         } else {
-            // trying to delete main node
-            // failure
-            return -1;
+            printf("- Stopped\n");
         }
-    } else {
-        // node not found
-        return -1;
+
+        current = current->next;
     }
 }
